@@ -15,19 +15,71 @@ using Mesen.Interop;
 using Avalonia.VisualTree;
 using System.Linq;
 using Avalonia.Controls.Primitives;
+using Avalonia.Media;
+using System.Windows.Markup;
+using System.Threading;
 
 namespace Mesen.Windows
 {
 	public class TASWindow : MesenWindow
 	{
-		private int rows = 1;
-		private int columns = 10;
-		private int size = 20;
+		private readonly CancellationTokenSource _cts = new();
+
+		private Grid m_Grid;
+
+		private int m_Rows = 0;
+		private int m_Columns = 0;
+		private int m_GridRows = 0;
+		private const int m_GridCols = 12;
+
+		private const int m_MinRows = 20;
+
+		//(|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
+		string[] m_Tags =
+					{
+						"",		// 0 (spacer)
+						"Frame",	// 1
+						"Reset",	// 2
+						"Power",	// 3
+						"U",		// 4
+						"D",		// 5
+						"L",		// 6
+						"R",		// 7
+						"Start",	// 8
+						"Select",// 9
+						"B",		// 10
+						"A",		// 11
+					};
+
+		double m_Height = 20;
+		double[] m_Widths =
+		{
+				20,			// 0
+				20 * 2.5,	// 1
+				20 * 2.5,	// 2
+				20 * 2.5,	// 3
+				20,			// 4
+				20,			// 5
+				20,			// 6
+				20,			// 7
+				20 * 2.5,	// 8
+				20 * 2.5,	// 9
+				20,			// 10
+				20,			// 11
+			};
 
 		public TASWindow()
 		{
 			InitializeComponent();
 			InitializeGrid();
+		}
+
+		protected override void OnClosed(EventArgs e)
+		{
+			_cts.Cancel();
+			_cts.Dispose();
+			RecordApi.MovieStop();
+			base.OnClosed(e);
 		}
 
 		private void InitializeComponent()
@@ -37,53 +89,311 @@ namespace Mesen.Windows
 
 		private void InitializeGrid()
 		{
-			var grid = this.FindControl<Grid>("GameGrid");
-
-			if(grid == null)
+			m_Grid = this.FindControl<Grid>("GameGrid");
+			if (m_Grid == null)
 			{
 				return;
 			}
 
-			grid.RowDefinitions.Clear();
-			grid.ColumnDefinitions.Clear();
-			grid.Children.Clear();
+			m_Grid.RowDefinitions.Clear();
+			m_Grid.ColumnDefinitions.Clear();
+			m_Grid.Children.Clear();
+
+			// Define header row
+			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
 			// Define rows and columns
-			for(int i = 0; i < rows; i++)
+			for(int i = 0; i < m_Rows; i++)
 			{
-				grid.RowDefinitions.Add(new RowDefinition(new GridLength(size)));
-			}
-			for(int j = 0; j < columns; j++)
-			{
-				grid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(size)));
+				m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 			}
 
-			// Add TextBlocks
-			for(int i = 0; i < rows; i++) 
+			// Add header TextBlocks
+			for(int j = 0; j < m_GridCols; j++) 
 			{
-				for(int j = 0; j < columns; j++) 
+				var headerText = new TextBlock {
+					Classes = { "tas-header" },
+					Text = m_Tags[j],
+					TextAlignment = Avalonia.Media.TextAlignment.Center
+				};
+
+				var header = new Border {
+					BorderBrush = Brushes.Black,
+					BorderThickness = new Thickness(1),
+					Padding = new Thickness(0),
+					Child = headerText,
+					HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+				};
+
+				m_Grid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(m_Widths[j])));
+
+				Grid.SetRow(header, 0);
+				Grid.SetColumn(header, j);
+				m_Grid.Children.Add(header);
+			}
+
+			// Add ToggleButtons
+			for(int i = 0; i < m_GridRows; i++)
+			{
+				for(int j = 0; j < m_GridCols; j++)
 				{
-					var cell = new ToggleButton {
-						Classes = { "tas-cell" },
-						Width = size,
-						Height = size,
+					m_Tags[1] = (i + 1).ToString();
+					// Format tags[1] to be 6 characters wide
+					m_Tags[1] = m_Tags[1].PadLeft(6, '0');
+
+					var header = new Border {
+						BorderBrush = Brushes.Black,
+						BorderThickness = new Thickness(1),
+						Padding = new Thickness(0),
+						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 					};
 
-					Grid.SetRow(cell, i);
-					Grid.SetColumn(cell, j);
-
-					// Handle click
-					cell.Click += (s, e) =>
+					// If it's the frame column, create a TextBlock
+					if (j <= 1)
 					{
-						if(cell.IsChecked == true)
-							cell.Content = "X";
-						else
-							cell.Content = ""; // optional, to toggle off
-					};
+						var cell = new TextBlock {
+							Classes = { "tas-header" },
+							Text = m_Tags[j],
+							TextAlignment = Avalonia.Media.TextAlignment.Center,
+							HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+							VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+						};
 
-					grid.Children.Add(cell);
+						header.Child = cell;
+
+						Grid.SetRow(header, i + 1);
+						Grid.SetColumn(header, j);
+						m_Grid.Children.Add(header);
+					}
+					else 
+					{
+						// Create a ToggleButton for other columns
+						var cell = new ToggleButton {
+							Classes = { "tas-cell" },
+							Width = m_Widths[j],
+							Height = m_Height,
+							Tag = m_Tags[j],
+							Content = "",
+							HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+							VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+						};
+
+						header.Child = cell;
+
+						// Handle click
+						cell.IsCheckedChanged += (s, e) =>
+						{
+							if(cell.IsChecked == true)
+								cell.Content = cell.Tag;
+							else
+								cell.Content = "";
+						};
+
+						Grid.SetRow(header, i + 1);
+						Grid.SetColumn(header, j);
+						m_Grid.Children.Add(header);
+					}
 				}
 			}
+
+			if (RecordApi.MoviePlaying() == false)
+			{
+				return;
+			}
+
+			m_Rows = RecordApi.MovieGetInputRowCount();
+			m_Columns = RecordApi.MovieGetInputColCount();
+
+			string[][] inputs = new string[m_MinRows][];
+			for(int r = 0; r < m_MinRows; r++) {
+				inputs[r] = new string[m_Columns];
+				for(int c = 0; c < m_Columns; c++) 
+				{
+					if(RecordApi.MoviePlaying() == false) 
+					{
+						return;
+					}
+					inputs[r][c] = RecordApi.MovieGetInputCell(r, c);
+				}
+			}
+
+			// Add existing rows from movie
+			// A full empty row looks like this: |..|........
+			// Where | is nothing, . is an empty cell, and each character represents a button
+			// This is the order: (|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
+			for(int r = 0; r < m_MinRows; r++)
+			{
+				bool[] values = new bool[m_GridCols - 2];
+				string rowValue = "";
+				for(int c = 0; c < m_Columns; c++) 
+				{
+					// Go over each char in input[r][c]
+					rowValue += inputs[r][c];
+				}
+
+				for (int charIdx = 0; charIdx < rowValue.Length; charIdx++)
+				{
+					char ch = rowValue[charIdx];
+					values[charIdx] = ch != '.' && ch != '|';
+				}
+				AddRow(values);
+			}
+		}
+
+		private void AddRow(bool[] values)
+		{
+			if(values.Length != m_GridCols - 2)
+			{ 
+				throw new ArgumentException("Values array length must be equal to number of columns minus 2 (for frame and spacer)");
+			}
+
+			m_GridRows++;
+			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
+
+			// Add new row of cells
+			for(int j = 0; j < m_GridCols; j++) 
+			{
+				string tag = "";
+
+				if(j == 0)
+				{ 
+					tag = ""; 
+				}
+				else if(j == 1)
+				{ 
+					tag = (m_GridRows).ToString().PadLeft(6, '0');
+				}
+				else
+				{ 
+					tag = m_Tags[j]; 
+				}
+
+				var header = new Border {
+					BorderBrush = Brushes.Black,
+					BorderThickness = new Thickness(1),
+					Padding = new Thickness(0),
+					HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+				};
+
+				// If it's the frame column, create a TextBlock
+				if (j <= 1) 
+				{
+					var cell = new TextBlock {
+						Classes = { "tas-header" },
+						Text = tag,
+						TextAlignment = Avalonia.Media.TextAlignment.Center,
+						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+					};
+
+					header.Child = cell;
+
+					Grid.SetRow(header, m_GridRows);
+					Grid.SetColumn(header, j);
+					m_Grid.Children.Add(header);
+				} 
+				else 
+				{
+					// Create a ToggleButton for other columns
+					var cell = new ToggleButton {
+						Classes = { "tas-cell" },
+						Width = m_Widths[j],
+						Height = m_Height,
+						Tag = tag,
+						Content = "",
+						HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+						VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+					};
+
+					if(j > 1)
+					{
+						cell.Content = values[j - 2] ? cell.Tag : "";
+						cell.IsChecked = values[j - 2];
+					}
+
+					header.Child = cell;
+
+					// Handle click
+					cell.IsCheckedChanged += (s, e) => {
+						if(cell.IsChecked == true)
+							cell.Content = cell.Tag;
+						else
+							cell.Content = "";
+					};
+
+					Grid.SetRow(header, m_GridRows);
+					Grid.SetColumn(header, j);
+					m_Grid.Children.Add(header);
+				}
+			}
+		}
+
+		private void AddRow()
+		{
+			bool[] values = new bool[m_GridCols - 2];
+			AddRow(values);
+		}
+
+		public async Task AddMissingRowsAsync()
+		{
+			RecordApi.MoviePause();
+
+			var token = _cts.Token;
+
+			List<bool[]> rows;
+
+			try
+			{
+				rows = await Task.Run(() =>
+				{
+					var result = new List<bool[]>();
+
+					for(int r = 0; r < m_Rows; r++)
+					{
+						if(token.IsCancellationRequested)
+							return result;
+
+						bool[] values = new bool[m_GridCols - 2];
+						string rowValue = "";
+
+						for(int c = 0; c < m_Columns; c++)
+							rowValue += RecordApi.MovieGetInputCell(r, c);
+
+						for(int i = 0; i < rowValue.Length; i++)
+							values[i] = rowValue[i] != '.' && rowValue[i] != '|';
+
+						result.Add(values);
+					}
+
+					return result;
+				}, token);
+			} 
+			catch(OperationCanceledException)
+			{
+				return;
+			}
+
+			if(token.IsCancellationRequested)
+			{ 
+				return;
+			}
+
+			foreach(var values in rows)
+			{
+				if(token.IsCancellationRequested)
+					break;
+
+				await Dispatcher.UIThread.InvokeAsync(() => AddRow(values), DispatcherPriority.Background, token);
+
+				// Yield to UI to keep it responsive
+				await Task.Yield();
+			}
+
+			if(!token.IsCancellationRequested)
+				RecordApi.MovieResume();
 		}
 	}
 }

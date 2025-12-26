@@ -17,6 +17,7 @@ public:
 	virtual bool Play(VirtualFile& file) = 0;
 	virtual void Stop() = 0;
 	virtual bool IsPlaying() = 0;
+	virtual vector<vector<string>> GetInput() { return vector<vector<string>>{}; };
 };
 
 class MovieManager
@@ -29,8 +30,12 @@ private:
 public:
 	MovieManager(Emulator* emu);
 
+	vector<vector<string>> GetCurrentMovieInput();
+
 	void Record(RecordMovieOptions options);
 	void Play(VirtualFile file, bool silent = false);
+	void Pause();
+	void Resume();
 	void Stop();
 	bool Playing();
 	bool Recording();

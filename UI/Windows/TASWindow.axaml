@@ -11,7 +11,7 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
 	x:Class="Mesen.Windows.TASWindow"
-	Width="400" Height="400"
+	Width="600" Height="400"
 	Icon="/Assets/Movie.png"
 	x:DataType="vm:TASViewModel"
 	Title="{l:Translate wndTitle}"
@@ -22,7 +22,7 @@
 		<Style Selector="ToggleButton.tas-cell">
 			<Setter Property="Background" Value="White"/>
 			<Setter Property="BorderBrush" Value="Black"/>
-			<Setter Property="BorderThickness" Value="0.5"/>
+			<Setter Property="BorderThickness" Value="1"/>
 
 			<Setter Property="Template">
 				<ControlTemplate>
@@ -33,14 +33,31 @@
 						Width="{TemplateBinding Width}"
 						Height="{TemplateBinding Height}"
 						HorizontalAlignment="Stretch"
-						VerticalAlignment="Stretch"/>
+						VerticalAlignment="Stretch">
+
+						<ContentPresenter
+							Content="{TemplateBinding Content}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"/>
+					</Border>
 				</ControlTemplate>
 			</Setter>
 		</Style>
 
-		<Style Selector="ToggleButton.tas-cell:checked">
-			<Setter Property="Background" Value="Black"/>
+		<Style Selector="TextBlock.tas-header">
+			<Setter Property="Background" Value="White"/>
 		</Style>
+
+		<Style Selector="ToggleButton.tas-cell">
+			<Setter Property="IsChecked" Value="False"/>
+			<Setter Property="Content" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+		</Style>
+
+		<Style Selector="ToggleButton.tas-cell:checked">
+			<Setter Property="IsChecked" Value="True"/>
+			<Setter Property="Content" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+		</Style>
+
 	</Window.Styles>
 
 	<Design.DataContext>
@@ -49,7 +66,7 @@
 
 	<DockPanel>
 		<ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-			<Grid Name="GameGrid" ColumnDefinitions="6*,4*">
+			<Grid Name="GameGrid">
 			</Grid>
 		</ScrollViewer>
 	</DockPanel>

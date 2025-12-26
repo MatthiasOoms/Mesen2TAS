@@ -242,6 +242,11 @@ bool MesenMovie::ApplySettings(istream& settingsData)
 	return true;
 }
 
+vector<vector<string>> MesenMovie::GetInput()
+{
+	return _inputData;
+}
+
 uint32_t MesenMovie::LoadInt(std::unordered_map<string, string> &settings, string name, uint32_t defaultValue)
 {
 	auto result = settings.find(name);

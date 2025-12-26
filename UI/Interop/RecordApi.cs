@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,11 @@ namespace Mesen.Interop
 		[DllImport(DllPath)] [return: MarshalAs(UnmanagedType.I1)] public static extern bool WaveIsRecording();
 
 		[DllImport(DllPath)] public static extern void MoviePlay([MarshalAs(UnmanagedType.LPUTF8Str)]string filename);
+		[DllImport(DllPath)] public static extern int MovieGetInputRowCount();
+		[DllImport(DllPath)] public static extern int MovieGetInputColCount();
+		[DllImport(DllPath)] [return: MarshalAs(UnmanagedType.LPUTF8Str)] public static extern string MovieGetInputCell(int row, int col);
+		[DllImport(DllPath)] public static extern void MoviePause();
+		[DllImport(DllPath)] public static extern void MovieResume();
 		[DllImport(DllPath)] public static extern void MovieRecord(RecordMovieOptions options);
 		[DllImport(DllPath)] public static extern void MovieStop();
 		[DllImport(DllPath)] [return: MarshalAs(UnmanagedType.I1)] public static extern bool MoviePlaying();

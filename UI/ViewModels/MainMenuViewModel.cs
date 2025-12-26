@@ -720,10 +720,13 @@ namespace Mesen.ViewModels
 						OnClick = async () => {
 							string? filename = await FileDialogHelper.OpenFile(ConfigManager.MovieFolder, wnd, FileDialogHelper.MesenTASExt);
 							if(filename != null) {
+
 								RecordApi.MoviePlay(filename);
 
-								// Open the movie editor screen
-								ApplicationHelper.GetOrCreateUniqueWindow(wnd, () => new TASWindow());
+								// Open the movie editor screen, give it the emulator
+								var window = ApplicationHelper.GetOrCreateUniqueWindow(wnd, () => new TASWindow());
+
+								_ =  window.AddMissingRowsAsync();
 							}
 						}
 					},
