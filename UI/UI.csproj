@@ -569,6 +569,9 @@
     <Compile Update="Debugger\Windows\DebuggerWindow.axaml.cs">
       <DependentUpon>DebuggerWindow.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Windows\TASWindow.axaml.cs">
+      <DependentUpon>TASWindow.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
 	  <AvaloniaResource Include="Assets\**" />

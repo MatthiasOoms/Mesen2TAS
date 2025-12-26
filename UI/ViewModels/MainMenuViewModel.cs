@@ -715,6 +715,19 @@ namespace Mesen.ViewModels
 						}
 					},
 					new MainMenuAction() {
+						ActionType = ActionType.PlayTAS,
+						IsEnabled = () => IsGameRunning && !RecordApi.MovieRecording() && !RecordApi.MoviePlaying(),
+						OnClick = async () => {
+							string? filename = await FileDialogHelper.OpenFile(ConfigManager.MovieFolder, wnd, FileDialogHelper.MesenTASExt);
+							if(filename != null) {
+								RecordApi.MoviePlay(filename);
+
+								// Open the movie editor screen
+								ApplicationHelper.GetOrCreateUniqueWindow(wnd, () => new TASWindow());
+							}
+						}
+					},
+					new MainMenuAction() {
 						ActionType = ActionType.Record,
 						IsEnabled = () => IsGameRunning && !RecordApi.MovieRecording() && !RecordApi.MoviePlaying(),
 						OnClick = () => {

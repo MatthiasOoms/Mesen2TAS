@@ -17,6 +17,7 @@ namespace Mesen.Utilities
 		public const string FirmwareExt = "[[FIRMWAREFILES]]";
 		public const string LabelFileExt = "[[LABELFILES]]";
 		public const string MesenMovieExt = "mmo";
+		public const string MesenTASExt = "tas";
 		public const string TblExt = "tbl";
 		public const string PaletteExt = "pal";
 		public const string TraceExt = "txt";

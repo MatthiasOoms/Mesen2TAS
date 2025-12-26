@@ -586,6 +586,8 @@ namespace Mesen.Debugger.Utilities
 		Movies,
 		[IconFile("MediaPlay")]
 		Play,
+		[IconFile("MediaPlay")]
+		PlayTAS,
 		[IconFile("Record")]
 		Record,
 		[IconFile("MediaStop")]

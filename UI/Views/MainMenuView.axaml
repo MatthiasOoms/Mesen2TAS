@@ -13,7 +13,7 @@
 	x:Class="Mesen.Views.MainMenuView"
 >
 	<Design.DataContext>
-		<vm:MainMenuViewModel />
+		<vm:MainMenuViewModel/>
 	</Design.DataContext>
 
 	<DockPanel Background="{DynamicResource MesenMenuBackground}">
