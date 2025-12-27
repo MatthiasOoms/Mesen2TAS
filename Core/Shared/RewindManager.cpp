@@ -463,6 +463,22 @@ void RewindManager::RewindSeconds(uint32_t seconds)
 	}
 }
 
+void RewindManager::RewindFrames(uint32_t frames)
+{
+    if(_rewindState != RewindState::Stopped) return;
+
+    auto lock = _emu->AcquireLock();
+
+    for(uint32_t i = 0; i < frames; i++) {
+        if(_history.empty()) break;
+        _currentHistory = _history.back();
+        _history.pop_back();
+    }
+
+    _currentHistory.LoadState(_emu, _history);
+}
+
+
 bool RewindManager::HasHistory()
 {
 	return _hasHistory;

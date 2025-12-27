@@ -3,6 +3,7 @@
 #include "Core/Shared/Video/VideoRenderer.h"
 #include "Core/Shared/Audio/SoundMixer.h"
 #include "Core/Shared/Movies/MovieManager.h"
+#include "Core/Shared/RewindManager.h"
 #include <combaseapi.h>
 
 extern unique_ptr<Emulator> _emu;
@@ -36,7 +37,13 @@ extern "C"
 	// Get a single cell (row, column)
 	DllExport const char* __stdcall MovieGetInputCell(int row, int col)
 	{
-		auto& input = _emu->GetMovieManager()->GetCurrentMovieInput();
+		auto movieManager = _emu->GetMovieManager();
+		if(!movieManager->Playing())
+		{
+			return "";
+		}
+
+		auto& input = movieManager->GetCurrentMovieInput();
 
 		if(row < 0 || row >= (int)input.size() || col < 0 || col >= (int)input[row].size()) {
 			return "";
@@ -49,8 +56,25 @@ extern "C"
 		return cstr;
 	}
 
-	DllExport void __stdcall MoviePause() { _emu->GetMovieManager()->Pause(); }
-	DllExport void __stdcall MovieResume() { _emu->GetMovieManager()->Resume(); }
+	DllExport void __stdcall MovieAdvanceFrame() 
+	{ 
+		_emu->Resume();
+		_emu->PauseOnNextFrame();
+	}
+
+	DllExport void __stdcall MovieRewindFrame()
+	{
+		// Go back 2 frames
+		auto rewindManager = _emu->GetRewindManager();
+		if(rewindManager)
+		{
+			rewindManager->RewindFrames(2);
+		}
+	}
+
+	DllExport void __stdcall MoviePause() { _emu->Pause(); }
+	DllExport void __stdcall MoviePauseOnNextFrame() { _emu->PauseOnNextFrame(); }
+	DllExport void __stdcall MovieResume() { _emu->Resume(); }
 
 	DllExport void __stdcall MovieStop() { _emu->GetMovieManager()->Stop(); }
 	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing(); }

@@ -60,14 +60,23 @@
 
 	</Window.Styles>
 
-	<Design.DataContext>
+	<Window.DataContext>
 		<vm:TASViewModel/>
-	</Design.DataContext>
+	</Window.DataContext>
 
 	<DockPanel>
 		<ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
 			<Grid Name="GameGrid">
 			</Grid>
 		</ScrollViewer>
+
+		<Button Command="{Binding ForwardCommand}">
+			<TextBlock Text="{l:Translate btnForward}"/>
+		</Button>
+
+		<Button Command="{Binding RewindCommand}">
+			<TextBlock Text="{l:Translate btnRewind}"/>
+		</Button>
+
 	</DockPanel>
 </Window>

@@ -34,8 +34,6 @@ public:
 
 	void Record(RecordMovieOptions options);
 	void Play(VirtualFile file, bool silent = false);
-	void Pause();
-	void Resume();
 	void Stop();
 	bool Playing();
 	bool Recording();

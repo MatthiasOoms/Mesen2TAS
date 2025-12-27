@@ -349,7 +349,7 @@ namespace Mesen.Windows
 			{
 				rows = await Task.Run(() =>
 				{
-					var result = new List<bool[]>();
+					var result = new List<bool[]>(m_Rows);
 
 					for(int r = 0; r < m_Rows; r++)
 					{
@@ -360,10 +360,17 @@ namespace Mesen.Windows
 						string rowValue = "";
 
 						for(int c = 0; c < m_Columns; c++)
+						{
+							if(token.IsCancellationRequested)
+								return result;
+
 							rowValue += RecordApi.MovieGetInputCell(r, c);
+						}
 
 						for(int i = 0; i < rowValue.Length; i++)
+						{
 							values[i] = rowValue[i] != '.' && rowValue[i] != '|';
+						}
 
 						result.Add(values);
 					}

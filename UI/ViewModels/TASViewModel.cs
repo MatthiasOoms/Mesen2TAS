@@ -15,10 +15,34 @@ using Avalonia.Controls;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Mesen.ViewModels
 {
 	public class TASViewModel : DisposableViewModel
 	{
+		public ICommand ForwardCommand { get; }
+		public ICommand RewindCommand { get; }
+
+		public TASViewModel()
+		{
+			ForwardCommand = new RelayCommand(Forward);
+			RewindCommand = new RelayCommand(Rewind);
+		}
+
+		private void Forward()
+		{
+			RecordApi.MovieAdvanceFrame();
+		}
+
+		private void Rewind()
+		{
+			RecordApi.MovieRewindFrame();
+
+			RecordApi.MovieResume();
+			RecordApi.MoviePauseOnNextFrame();
+		}
+
 	}
 }

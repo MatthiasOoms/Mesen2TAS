@@ -1181,6 +1181,12 @@
 			<Control ID="btnClose">Close</Control>
 		</Form>
 
+		<Form ID="TASWindow">
+			<Control ID="wndTitle">TAS Controls</Control>
+			<Control ID="btnForward">Advance</Control>
+			<Control ID="btnRewind">Rewind</Control>
+		</Form>
+
 		<Form ID="HistoryViewerWindow">
 			<Control ID="wndTitle">History Viewer</Control>
 			<Control ID="lblVolume">Volume</Control>

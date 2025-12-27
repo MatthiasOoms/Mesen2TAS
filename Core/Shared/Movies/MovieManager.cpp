@@ -52,16 +52,6 @@ void MovieManager::Play(VirtualFile file, bool forTest)
 	}
 }
 
-void MovieManager::Pause()
-{
-	_emu->Pause();
-}
-
-void MovieManager::Resume()
-{
-	_emu->Resume();
-}
-
 vector<vector<string>> MovieManager::GetCurrentMovieInput()
 {
 	return _player->GetInput();
