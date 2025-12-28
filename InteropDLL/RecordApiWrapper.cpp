@@ -56,6 +56,30 @@ extern "C"
 		return cstr;
 	}
 
+	DllExport const void __stdcall MovieSetInputCell(int row, int col, int idx, char value)
+	{
+		auto movieManager = _emu->GetMovieManager();
+		if(!movieManager->Playing())
+		{
+			return;
+		}
+
+		auto& input = movieManager->GetCurrentMovieInput();
+
+		if(row < 0 || row >= (int)input.size() || col < 0 || col >= (int)input[row].size())
+		{
+			return;
+		}
+
+		if(idx < 0 || idx >= (int)input[row][col].size())
+		{
+			return;
+		}
+
+		// Set character at position idx to value
+		input[row][col][idx] = value;
+	}
+
 	DllExport void __stdcall MovieAdvanceFrame() 
 	{ 
 		_emu->Resume();

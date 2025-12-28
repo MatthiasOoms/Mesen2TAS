@@ -39,14 +39,14 @@ namespace Mesen.Windows
 					{
 						"",		// 0 (spacer)
 						"Frame",	// 1
-						"Reset",	// 2
+						"reset",	// 2
 						"Power",	// 3
 						"U",		// 4
 						"D",		// 5
 						"L",		// 6
 						"R",		// 7
 						"Start",	// 8
-						"Select",// 9
+						"select",// 9
 						"B",		// 10
 						"A",		// 11
 					};
@@ -102,12 +102,6 @@ namespace Mesen.Windows
 			// Define header row
 			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
-			// Define rows and columns
-			for(int i = 0; i < m_Rows; i++)
-			{
-				m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
-			}
-
 			// Add header TextBlocks
 			for(int j = 0; j < m_GridCols; j++) 
 			{
@@ -133,71 +127,6 @@ namespace Mesen.Windows
 				m_Grid.Children.Add(header);
 			}
 
-			// Add ToggleButtons
-			for(int i = 0; i < m_GridRows; i++)
-			{
-				for(int j = 0; j < m_GridCols; j++)
-				{
-					m_Tags[1] = (i + 1).ToString();
-					// Format tags[1] to be 6 characters wide
-					m_Tags[1] = m_Tags[1].PadLeft(6, '0');
-
-					var header = new Border {
-						BorderBrush = Brushes.Black,
-						BorderThickness = new Thickness(1),
-						Padding = new Thickness(0),
-						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-					};
-
-					// If it's the frame column, create a TextBlock
-					if (j <= 1)
-					{
-						var cell = new TextBlock {
-							Classes = { "tas-header" },
-							Text = m_Tags[j],
-							TextAlignment = Avalonia.Media.TextAlignment.Center,
-							HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-							VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-						};
-
-						header.Child = cell;
-
-						Grid.SetRow(header, i + 1);
-						Grid.SetColumn(header, j);
-						m_Grid.Children.Add(header);
-					}
-					else 
-					{
-						// Create a ToggleButton for other columns
-						var cell = new ToggleButton {
-							Classes = { "tas-cell" },
-							Width = m_Widths[j],
-							Height = m_Height,
-							Tag = m_Tags[j],
-							Content = "",
-							HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-							VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-						};
-
-						header.Child = cell;
-
-						// Handle click
-						cell.IsCheckedChanged += (s, e) =>
-						{
-							if(cell.IsChecked == true)
-								cell.Content = cell.Tag;
-							else
-								cell.Content = "";
-						};
-
-						Grid.SetRow(header, i + 1);
-						Grid.SetColumn(header, j);
-						m_Grid.Children.Add(header);
-					}
-				}
-			}
-
 			if (RecordApi.MoviePlaying() == false)
 			{
 				return;
@@ -221,7 +150,7 @@ namespace Mesen.Windows
 
 			// Add existing rows from movie
 			// A full empty row looks like this: |..|........
-			// Where | is nothing, . is an empty cell, and each character represents a button
+			// Where . is an empty cell, and each character represents a button
 			// This is the order: (|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
 			for(int r = 0; r < m_MinRows; r++)
 			{
@@ -279,7 +208,7 @@ namespace Mesen.Windows
 				};
 
 				// If it's the frame column, create a TextBlock
-				if (j <= 1) 
+				if (j <= 1)
 				{
 					var cell = new TextBlock {
 						Classes = { "tas-header" },
@@ -317,11 +246,30 @@ namespace Mesen.Windows
 					header.Child = cell;
 
 					// Handle click
-					cell.IsCheckedChanged += (s, e) => {
+					int rowIndex = m_GridRows;   // capture row
+					int colIndex = j;           // capture column
+
+					cell.IsCheckedChanged += (s, e) =>
+					{
+						int inputHalfIdx = 0;
+						int fieldIdx = colIndex - 2;
+
+						if(colIndex > 3)
+						{
+							inputHalfIdx = 1;
+							fieldIdx = colIndex - 4;
+						}
+
 						if(cell.IsChecked == true)
+						{
 							cell.Content = cell.Tag;
+							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, ((string)cell.Tag)[0]);
+						}
 						else
+						{
 							cell.Content = "";
+							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, '.');
+						}
 					};
 
 					Grid.SetRow(header, m_GridRows);
@@ -331,7 +279,7 @@ namespace Mesen.Windows
 			}
 		}
 
-		private void AddRow()
+		private void AddBlankRow()
 		{
 			bool[] values = new bool[m_GridCols - 2];
 			AddRow(values);

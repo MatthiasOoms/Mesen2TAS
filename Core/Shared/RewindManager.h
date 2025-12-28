@@ -91,6 +91,7 @@ public:
 	bool IsStepBack();
 	void RewindSeconds(uint32_t seconds);
 	void RewindFrames(uint32_t frames);
+	void RewindToFrame(uint32_t frames);
 
 	bool HasHistory();
 	deque<RewindData> GetHistory();

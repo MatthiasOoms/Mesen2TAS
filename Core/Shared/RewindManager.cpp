@@ -512,6 +512,15 @@ void RewindManager::RewindFrames(uint32_t frames)
 	}
 }
 
+void RewindManager::RewindToFrame(uint32_t goalFrame)
+{
+	// Calculate nearest history start
+	uint32_t totalFrames = _history.size() * RewindManager::BufferSize + _currentHistory.FrameCount;
+
+	// Go back to the nearest history start
+	RewindFrames(totalFrames - goalFrame);
+}
+
 bool RewindManager::HasHistory()
 {
 	return _hasHistory;

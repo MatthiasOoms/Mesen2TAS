@@ -52,13 +52,8 @@ void MovieManager::Play(VirtualFile file, bool forTest)
 	}
 }
 
-vector<vector<string>> MovieManager::GetCurrentMovieInput()
+vector<vector<string>>& MovieManager::GetCurrentMovieInput()
 {
-	if(!Playing())
-	{
-		return vector<vector<string>>{};
-	}
-
 	return _player->GetInput();
 }
 

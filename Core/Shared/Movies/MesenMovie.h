@@ -49,7 +49,7 @@ public:
 	bool Play(VirtualFile &file) override;
 	void Stop() override;
 
-	vector<vector<string>> GetInput();
+	vector<vector<string>>& GetInput();
 	bool SetInput(BaseControlDevice* device) override;
 	bool IsPlaying() override;
 
