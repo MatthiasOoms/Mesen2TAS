@@ -132,7 +132,22 @@ void Emulator::Run()
 	_frameLimiter.reset(new FrameLimiter(_frameDelay));
 	_lastFrameTimer.Reset();
 
-	while(!_stopFlag) {
+	while(!_stopFlag)
+	{
+		uint32_t frames = _pendingInvisibleFrames.exchange(0);
+		if(frames > 0)
+		{
+			_isRunAheadFrame = true;
+
+			while(frames--)
+			{
+				_console->RunFrame();
+				_rewindManager->ProcessEndOfFrame();
+			}
+
+			_isRunAheadFrame = false;
+		}
+
 		bool useRunAhead = _settings->GetEmulationConfig().RunAheadFrames > 0 && !_debugger && !_audioPlayerHud && !_rewindManager->IsRewinding() && _settings->GetEmulationSpeed() > 0 && _settings->GetEmulationSpeed() <= 100;
 		if(useRunAhead) {
 			RunFrameWithRunAhead();
@@ -166,6 +181,11 @@ void Emulator::Run()
 
 	PlatformUtilities::EnableScreensaver();
 	PlatformUtilities::RestoreTimerResolution();
+}
+
+void Emulator::RequestInvisibleFrames(uint32_t frameCount)
+{
+	_pendingInvisibleFrames.fetch_add(frameCount, std::memory_order_release);
 }
 
 void Emulator::ProcessAutoSaveState()

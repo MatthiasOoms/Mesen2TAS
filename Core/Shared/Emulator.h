@@ -118,6 +118,8 @@ private:
 	int32_t _stopCode = 0;
 	bool _stopRequested = false;
 
+	std::atomic<uint32_t> _pendingInvisibleFrames = 0;
+
 	void WaitForLock();
 	void WaitForPauseEnd();
 
@@ -145,6 +147,7 @@ public:
 	void Release();
 
 	void Run();
+	void RequestInvisibleFrames(uint32_t frameCount);
 	void Stop(bool sendNotification, bool preventRecentGameSave = false, bool saveBattery = true);
 
 	void OnBeforeSendFrame();

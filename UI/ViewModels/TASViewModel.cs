@@ -40,9 +40,7 @@ namespace Mesen.ViewModels
 		{
 			RecordApi.MovieRewindFrame();
 
-			RecordApi.MovieResume();
-			RecordApi.MoviePauseOnNextFrame();
+			RecordApi.MovieAdvanceFrame();
 		}
-
 	}
 }

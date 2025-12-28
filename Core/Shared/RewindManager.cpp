@@ -465,19 +465,52 @@ void RewindManager::RewindSeconds(uint32_t seconds)
 
 void RewindManager::RewindFrames(uint32_t frames)
 {
-    if(_rewindState != RewindState::Stopped) return;
+	while(frames > 0 && (_currentHistory.FrameCount > 0 || !_history.empty()))
+	{
+		if(_currentHistory.FrameCount > frames)
+		{
+			uint32_t replayFrames = _currentHistory.FrameCount - frames;
 
-    auto lock = _emu->AcquireLock();
+			// Reload the savestate for this block
+			_currentHistory.LoadState(_emu, _history);
 
-    for(uint32_t i = 0; i < frames; i++) {
-        if(_history.empty()) break;
-        _currentHistory = _history.back();
-        _history.pop_back();
-    }
+			// Move forward to the target frame
+			_emu->RequestInvisibleFrames(replayFrames);
 
-    _currentHistory.LoadState(_emu, _history);
+			_currentHistory.FrameCount = replayFrames;
+			frames = 0;
+		}
+		else
+		{
+			// Consume this block
+			frames -= _currentHistory.FrameCount;
+
+			// Move current block to backup
+			_historyBackup.push_front(_currentHistory);
+
+			// Load previous block
+			if(!_history.empty())
+			{
+				// Get previous block
+				_currentHistory = _history.back();
+				_history.pop_back();
+
+				// Reload the savestate for this block
+				_currentHistory.LoadState(_emu, _history);
+
+				// Calculate how many frames to replay in this block
+				uint32_t replayFrames = _currentHistory.FrameCount - frames;
+
+				// Then replay needed frames in that block
+				_emu->RequestInvisibleFrames(replayFrames);
+			}
+			else
+			{
+				_currentHistory = RewindData();
+			}
+		}
+	}
 }
-
 
 bool RewindManager::HasHistory()
 {

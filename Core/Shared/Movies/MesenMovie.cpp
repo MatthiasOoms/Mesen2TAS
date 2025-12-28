@@ -244,6 +244,11 @@ bool MesenMovie::ApplySettings(istream& settingsData)
 
 vector<vector<string>> MesenMovie::GetInput()
 {
+	if(!_playing)
+	{
+		return vector<vector<string>>{};
+	}
+
 	return _inputData;
 }
 
