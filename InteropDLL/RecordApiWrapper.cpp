@@ -96,6 +96,15 @@ extern "C"
 		}
 	}
 
+	DllExport void __stdcall MovieJumpToFrame(int goalFrame)
+	{
+		auto rewindManager = _emu->GetRewindManager();
+		if(rewindManager)
+		{
+			rewindManager->JumpToFrame(goalFrame);
+		}
+	}
+
 	DllExport void __stdcall MoviePause() { _emu->Pause(); }
 	DllExport void __stdcall MoviePauseOnNextFrame() { _emu->PauseOnNextFrame(); }
 	DllExport void __stdcall MovieResume() { _emu->Resume(); }

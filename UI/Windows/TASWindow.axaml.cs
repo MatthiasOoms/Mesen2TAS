@@ -208,7 +208,7 @@ namespace Mesen.Windows
 				};
 
 				// If it's the frame column, create a TextBlock
-				if (j <= 1)
+				if (j < 1)
 				{
 					var cell = new TextBlock {
 						Classes = { "tas-header" },
@@ -224,7 +224,36 @@ namespace Mesen.Windows
 					Grid.SetColumn(header, j);
 					m_Grid.Children.Add(header);
 				} 
-				else 
+				else if (j == 1)
+				{
+					// Create a ToggleButton for other columns
+					var cell = new Button {
+						Classes = { "tas-cell" },
+						Width = m_Widths[j],
+						Height = m_Height,
+						Tag = tag,
+						Content = "",
+						HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+						VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+					};
+
+					cell.Content = cell.Tag;
+
+					cell.Click += (s, e) =>
+					{
+						// String to int
+						int goalFrame = int.Parse((string)cell.Tag);
+						RecordApi.MoviePause();
+						RecordApi.MovieJumpToFrame(goalFrame);
+					};
+
+					header.Child = cell;
+
+					Grid.SetRow(header, m_GridRows);
+					Grid.SetColumn(header, j);
+					m_Grid.Children.Add(header);
+				}
+				else
 				{
 					// Create a ToggleButton for other columns
 					var cell = new ToggleButton {
@@ -237,11 +266,8 @@ namespace Mesen.Windows
 						VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
 					};
 
-					if(j > 1)
-					{
-						cell.Content = values[j - 2] ? cell.Tag : "";
-						cell.IsChecked = values[j - 2];
-					}
+					cell.Content = values[j - 2] ? cell.Tag : "";
+					cell.IsChecked = values[j - 2];
 
 					header.Child = cell;
 
@@ -249,24 +275,19 @@ namespace Mesen.Windows
 					int rowIndex = m_GridRows;   // capture row
 					int colIndex = j;           // capture column
 
-					cell.IsCheckedChanged += (s, e) =>
-					{
+					cell.IsCheckedChanged += (s, e) => {
 						int inputHalfIdx = 0;
 						int fieldIdx = colIndex - 2;
 
-						if(colIndex > 3)
-						{
+						if(colIndex > 3) {
 							inputHalfIdx = 1;
 							fieldIdx = colIndex - 4;
 						}
 
-						if(cell.IsChecked == true)
-						{
+						if(cell.IsChecked == true) {
 							cell.Content = cell.Tag;
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, ((string)cell.Tag)[0]);
-						}
-						else
-						{
+						} else {
 							cell.Content = "";
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, '.');
 						}

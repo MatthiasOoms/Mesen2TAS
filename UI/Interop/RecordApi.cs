@@ -28,6 +28,7 @@ namespace Mesen.Interop
 		[DllImport(DllPath)] public static extern void MovieSetInputCell(int row, int col, int idx, char value);
 		[DllImport(DllPath)] public static extern void MovieAdvanceFrame();
 		[DllImport(DllPath)] public static extern void MovieRewindFrame();
+		[DllImport(DllPath)] public static extern void MovieJumpToFrame(int goalFrame);
 		[DllImport(DllPath)] public static extern void MoviePause();
 		[DllImport(DllPath)] public static extern void MoviePauseOnNextFrame();
 		[DllImport(DllPath)] public static extern void MovieResume();

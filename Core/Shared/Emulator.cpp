@@ -146,6 +146,7 @@ void Emulator::Run()
 			}
 
 			_isRunAheadFrame = false;
+			_pauseOnNextFrame = true;
 		}
 
 		bool useRunAhead = _settings->GetEmulationConfig().RunAheadFrames > 0 && !_debugger && !_audioPlayerHud && !_rewindManager->IsRewinding() && _settings->GetEmulationSpeed() > 0 && _settings->GetEmulationSpeed() <= 100;
