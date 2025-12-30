@@ -451,11 +451,15 @@ void RewindManager::RewindSeconds(uint32_t seconds)
 		uint32_t removeCount = (seconds * 60 / RewindManager::BufferSize) + 1;
 		auto lock = _emu->AcquireLock();
 
-		for(uint32_t i = 0; i < removeCount; i++) {
-			if(!_history.empty()) {
+		for(uint32_t i = 0; i < removeCount; i++)
+		{
+			if(!_history.empty())
+			{
 				_currentHistory = _history.back();
 				_history.pop_back();
-			} else {
+			}
+			else
+			{
 				break;
 			}
 		}
@@ -492,7 +496,7 @@ void RewindManager::RewindFrames(uint32_t frames)
 				_currentHistory = _history.back();
 				_history.pop_back();
 
-				while (frames > _currentHistory.FrameCount)
+				while (frames > _currentHistory.FrameCount && !_history.empty())
 				{
 					_currentHistory = _history.back();
 					_history.pop_back();
@@ -516,8 +520,7 @@ void RewindManager::RewindFrames(uint32_t frames)
 
 void RewindManager::JumpToFrame(uint32_t goalFrame)
 {
-	// Calculate nearest history start
-	uint32_t passedFrames = _history.size() * RewindManager::BufferSize + _currentHistory.FrameCount;
+	uint32_t passedFrames = _history.size() * RewindManager::BufferSize + (_currentHistory.FrameCount);
 
 	if(goalFrame < passedFrames)
 	{

@@ -22,6 +22,7 @@ namespace Mesen.Interop
 		[DllImport(DllPath)] [return: MarshalAs(UnmanagedType.I1)] public static extern bool WaveIsRecording();
 
 		[DllImport(DllPath)] public static extern void MoviePlay([MarshalAs(UnmanagedType.LPUTF8Str)]string filename);
+		[DllImport(DllPath)] public static extern int MovieGetFrameCount();
 		[DllImport(DllPath)] public static extern int MovieGetInputRowCount();
 		[DllImport(DllPath)] public static extern int MovieGetInputColCount();
 		[DllImport(DllPath)] [return: MarshalAs(UnmanagedType.LPUTF8Str)] public static extern string MovieGetInputCell(int row, int col);

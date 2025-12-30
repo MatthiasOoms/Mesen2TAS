@@ -1,23 +1,18 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using System;
-using System.ComponentModel;
-using Avalonia.Input;
-using Mesen.ViewModels;
-using Mesen.GUI.Utilities;
-using Mesen.Utilities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Mesen.Interop;
-using Avalonia.VisualTree;
-using System.Linq;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
-using System.Windows.Markup;
 using System.Threading;
+using Avalonia.Platform;
+using Avalonia.Media.Imaging;
+using Avalonia.LogicalTree;
+using System.Collections;
 
 namespace Mesen.Windows
 {
@@ -32,7 +27,13 @@ namespace Mesen.Windows
 		private int m_GridRows = 0;
 		private const int m_GridCols = 12;
 
+		private DispatcherTimer _frameTimer;
+		private int m_PreviousFrame = -1;
+		private int m_CurrentFrame = 0;
+
 		private const int m_MinRows = 20;
+
+		private List<Image> m_RowMarkerImages = new();
 
 		//(|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
 		string[] m_Tags =
@@ -72,10 +73,24 @@ namespace Mesen.Windows
 		{
 			InitializeComponent();
 			InitializeGrid();
+			StartFrameLoop();
+		}
+
+		private void StartFrameLoop()
+		{
+			_frameTimer = new DispatcherTimer
+			{
+				Interval = TimeSpan.FromMilliseconds(16) // ~60 Hz
+			};
+
+			_frameTimer.Tick += (_, _) => UpdateCurrentFrame();
+			_frameTimer.Start();
 		}
 
 		protected override void OnClosed(EventArgs e)
 		{
+			_frameTimer?.Stop();
+
 			_cts.Cancel();
 			_cts.Dispose();
 			RecordApi.MovieStop();
@@ -207,17 +222,21 @@ namespace Mesen.Windows
 					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 				};
 
-				// If it's the frame column, create a TextBlock
 				if (j < 1)
 				{
-					var cell = new TextBlock {
-						Classes = { "tas-header" },
-						Text = tag,
-						TextAlignment = Avalonia.Media.TextAlignment.Center,
-						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+					// Create an image display for the spacer column
+					var cell = new Image {
+						Tag = m_GridRows,
+						Width = m_Widths[j],
+						Height = m_Height,
+						Stretch = Stretch.Uniform,
+						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+						Source = LoadBitmap("avares://Mesen/Assets/MediaPlay.png")
 					};
 
+					m_RowMarkerImages.Add(cell);
+					cell.IsVisible = false;
 					header.Child = cell;
 
 					Grid.SetRow(header, m_GridRows);
@@ -243,8 +262,13 @@ namespace Mesen.Windows
 					{
 						// String to int
 						int goalFrame = int.Parse((string)cell.Tag);
-						RecordApi.MoviePause();
 						RecordApi.MovieJumpToFrame(goalFrame);
+						RecordApi.MovieResume();
+
+						m_PreviousFrame = m_CurrentFrame;
+						m_CurrentFrame = goalFrame;
+
+						UpdateFrameMarker();
 					};
 
 					header.Child = cell;
@@ -300,6 +324,59 @@ namespace Mesen.Windows
 			}
 		}
 
+		private void UpdateCurrentFrame()
+		{
+			if(!RecordApi.MoviePlaying())
+				return;
+
+			m_PreviousFrame = m_CurrentFrame;
+			m_CurrentFrame = RecordApi.MovieGetFrameCount();
+
+			UpdateFrameMarker();
+		}
+
+		private void UpdateFrameMarker()
+		{
+			if (m_CurrentFrame > m_RowMarkerImages.Count)
+				return;
+
+			if (m_CurrentFrame == m_PreviousFrame)
+				return;
+
+			// Disable previous markers
+			int range = 40;
+			int lowerBound = Math.Max(0, m_CurrentFrame - range);
+			int upperBound = m_CurrentFrame - lowerBound - 1;
+			if (upperBound > 0)
+			{
+				foreach (Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound))
+				{
+					child.IsVisible = false;
+				}
+			
+			}
+			var newChild = m_RowMarkerImages[m_CurrentFrame];
+			if(newChild != null)
+			{
+				newChild.IsVisible = true;
+			}
+
+			if (m_PreviousFrame > m_RowMarkerImages.Count)
+				return;
+
+			var oldChild = m_RowMarkerImages[m_PreviousFrame];
+			if(oldChild != null)
+			{
+				oldChild.IsVisible = false;
+			}
+		}
+
+		private static Bitmap LoadBitmap(string uri)
+		{
+			using var stream = AssetLoader.Open(new Uri(uri));
+			return new Bitmap(stream);
+		}
+
 		private void AddBlankRow()
 		{
 			bool[] values = new bool[m_GridCols - 2];
@@ -318,9 +395,9 @@ namespace Mesen.Windows
 			{
 				rows = await Task.Run(() =>
 				{
-					var result = new List<bool[]>(m_Rows);
+					var result = new List<bool[]>(m_Rows - m_MinRows);
 
-					for(int r = 0; r < m_Rows; r++)
+					for(int r = m_MinRows; r < m_Rows; r++)
 					{
 						if(token.IsCancellationRequested)
 							return result;

@@ -20,6 +20,26 @@ extern "C"
 
 	DllExport void __stdcall MoviePlay(char* filename) { _emu->GetMovieManager()->Play(string(filename)); }
 
+	DllExport int __stdcall MovieGetFrameCount()
+	{
+		RewindManager* rewindManager = _emu->GetRewindManager();
+		if(rewindManager)
+		{
+			auto history = rewindManager->GetHistory();
+
+			int result = history.back().FrameCount;
+			if(history.size() > 1)
+			{
+				result += (history.size() - 1) * RewindManager::BufferSize;
+			}
+			return result;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
 	// Get number of rows
 	DllExport int __stdcall MovieGetInputRowCount()
 	{
@@ -110,7 +130,7 @@ extern "C"
 	DllExport void __stdcall MovieResume() { _emu->Resume(); }
 
 	DllExport void __stdcall MovieStop() { _emu->GetMovieManager()->Stop(); }
-	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing(); }
+	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing() && !_emu->IsPaused() && !_emu->IsRunAheadFrame(); }
 	DllExport bool __stdcall MovieRecording() { return _emu->GetMovieManager()->Recording(); }
 	DllExport void __stdcall MovieRecord(RecordMovieOptions options) { _emu->GetMovieManager()->Record(options); }
 }

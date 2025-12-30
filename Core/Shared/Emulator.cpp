@@ -145,6 +145,7 @@ void Emulator::Run()
 				_rewindManager->ProcessEndOfFrame();
 			}
 
+			frames = 0;
 			_isRunAheadFrame = false;
 			_pauseOnNextFrame = true;
 		}
