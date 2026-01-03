@@ -467,6 +467,9 @@
     <Compile Update="Controls\StateGrid.axaml.cs">
       <DependentUpon>StateGrid.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Windows\TASRecordWindow.axaml.cs">
+      <DependentUpon>TASRecordWindow.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Windows\CheatDatabaseWindow.axaml.cs">
       <DependentUpon>CheatDatabaseWindow.axaml</DependentUpon>
     </Compile>

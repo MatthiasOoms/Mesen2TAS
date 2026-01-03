@@ -853,6 +853,23 @@ void Emulator::WaitForPauseEnd()
 		//Sleep until emulation is resumed
 		std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(30));
 
+		// Handle any pending invisible frames while paused
+		uint32_t frames = _pendingInvisibleFrames.exchange(0);
+		if(frames > 0)
+		{
+			_isRunAheadFrame = true;
+
+			while(frames--)
+			{
+				_console->RunFrame();
+				_rewindManager->ProcessEndOfFrame();
+			}
+
+			frames = 0;
+			_isRunAheadFrame = false;
+			_pauseOnNextFrame = true;
+		}
+
 		if(_systemActionManager->IsResetPending()) {
 			//Reset/power cycle was pressed, stop waiting and process it now
 			break;

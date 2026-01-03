@@ -49,12 +49,10 @@
 		</Style>
 
 		<Style Selector="ToggleButton.tas-cell">
-			<Setter Property="IsChecked" Value="False"/>
 			<Setter Property="Content" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
 		</Style>
 
 		<Style Selector="ToggleButton.tas-cell:checked">
-			<Setter Property="IsChecked" Value="True"/>
 			<Setter Property="Content" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
 		</Style>
 
@@ -65,12 +63,14 @@
 	</Window.DataContext>
 
 	<DockPanel>
+		<m:NativeRenderer Name="Renderer" HorizontalAlignment="Center" VerticalAlignment="Center">
+		</m:NativeRenderer>
 		<ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
 			<Grid Name="GameGrid">
 			</Grid>
 		</ScrollViewer>
 
-		<Button Command="{Binding ForwardCommand}">
+		<Button Command="{Binding ForwardCommand}" Click="Forward_Click">
 			<TextBlock Text="{l:Translate btnForward}"/>
 		</Button>
 

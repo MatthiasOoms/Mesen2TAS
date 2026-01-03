@@ -18,9 +18,12 @@ extern "C"
 	DllExport void __stdcall WaveStop() { _emu->GetSoundMixer()->StopRecording(); }
 	DllExport bool __stdcall WaveIsRecording() { return _emu->GetSoundMixer()->IsRecording(); }
 
-	DllExport void __stdcall MoviePlay(char* filename) { _emu->GetMovieManager()->Play(string(filename)); }
+	DllExport void __stdcall MoviePlay(char* filename)
+	{
+		_emu->GetMovieManager()->Play(string(filename));
+	}
 
-	DllExport int __stdcall MovieGetFrameCount()
+	DllExport uint32_t __stdcall MovieGetFrameCount()
 	{
 		RewindManager* rewindManager = _emu->GetRewindManager();
 		if(rewindManager)
@@ -130,7 +133,7 @@ extern "C"
 	DllExport void __stdcall MovieResume() { _emu->Resume(); }
 
 	DllExport void __stdcall MovieStop() { _emu->GetMovieManager()->Stop(); }
-	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing() && !_emu->IsPaused() && !_emu->IsRunAheadFrame(); }
+	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing() && !_emu->IsRunAheadFrame(); }
 	DllExport bool __stdcall MovieRecording() { return _emu->GetMovieManager()->Recording(); }
 	DllExport void __stdcall MovieRecord(RecordMovieOptions options) { _emu->GetMovieManager()->Record(options); }
 }

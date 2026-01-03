@@ -11,8 +11,8 @@ using Avalonia.Media;
 using System.Threading;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
-using Avalonia.LogicalTree;
-using System.Collections;
+using Mesen.ViewModels;
+using Avalonia.Rendering;
 
 namespace Mesen.Windows
 {
@@ -21,6 +21,7 @@ namespace Mesen.Windows
 		private readonly CancellationTokenSource _cts = new();
 
 		private Grid m_Grid;
+		private NativeRenderer _renderer;
 
 		private int m_Rows = 0;
 		private int m_Columns = 0;
@@ -72,14 +73,19 @@ namespace Mesen.Windows
 		public TASWindow()
 		{
 			InitializeComponent();
+
+			if(Design.IsDesignMode)
+				return;
+
 			InitializeGrid();
 			StartFrameLoop();
+
+			_renderer = this.GetControl<NativeRenderer>("Renderer");
 		}
 
 		private void StartFrameLoop()
 		{
-			_frameTimer = new DispatcherTimer
-			{
+			_frameTimer = new DispatcherTimer {
 				Interval = TimeSpan.FromMilliseconds(16) // ~60 Hz
 			};
 
@@ -89,6 +95,13 @@ namespace Mesen.Windows
 
 		protected override void OnClosed(EventArgs e)
 		{
+			HistoryApi.HistoryViewerInitialize(TryGetPlatformHandle()?.Handle ?? IntPtr.Zero, _renderer.Handle);
+			if (HistoryApi.HistoryViewerEnabled())
+			{
+				HistoryApi.HistoryViewerSaveMovie(TASViewModel.SavePath, 0, RecordApi.MovieGetFrameCount());
+			}
+			HistoryApi.HistoryViewerRelease();
+
 			_frameTimer?.Stop();
 
 			_cts.Cancel();
@@ -105,8 +118,7 @@ namespace Mesen.Windows
 		private void InitializeGrid()
 		{
 			m_Grid = this.FindControl<Grid>("GameGrid");
-			if (m_Grid == null)
-			{
+			if(m_Grid == null) {
 				return;
 			}
 
@@ -118,8 +130,7 @@ namespace Mesen.Windows
 			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
 			// Add header TextBlocks
-			for(int j = 0; j < m_GridCols; j++) 
-			{
+			for(int j = 0; j < m_GridCols; j++) {
 				var headerText = new TextBlock {
 					Classes = { "tas-header" },
 					Text = m_Tags[j],
@@ -142,9 +153,13 @@ namespace Mesen.Windows
 				m_Grid.Children.Add(header);
 			}
 
-			if (RecordApi.MoviePlaying() == false)
-			{
+			if(EmuApi.IsPaused()) {
 				return;
+			}
+
+			while(!RecordApi.MoviePlaying()) {
+				// Wait
+				Task.Delay(50).Wait();
 			}
 
 			m_Rows = RecordApi.MovieGetInputRowCount();
@@ -153,12 +168,7 @@ namespace Mesen.Windows
 			string[][] inputs = new string[m_MinRows][];
 			for(int r = 0; r < m_MinRows; r++) {
 				inputs[r] = new string[m_Columns];
-				for(int c = 0; c < m_Columns; c++) 
-				{
-					if(RecordApi.MoviePlaying() == false) 
-					{
-						return;
-					}
+				for(int c = 0; c < m_Columns; c++) {
 					inputs[r][c] = RecordApi.MovieGetInputCell(r, c);
 				}
 			}
@@ -167,18 +177,15 @@ namespace Mesen.Windows
 			// A full empty row looks like this: |..|........
 			// Where . is an empty cell, and each character represents a button
 			// This is the order: (|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
-			for(int r = 0; r < m_MinRows; r++)
-			{
+			for(int r = 0; r < m_MinRows; r++) {
 				bool[] values = new bool[m_GridCols - 2];
 				string rowValue = "";
-				for(int c = 0; c < m_Columns; c++) 
-				{
+				for(int c = 0; c < m_Columns; c++) {
 					// Go over each char in input[r][c]
 					rowValue += inputs[r][c];
 				}
 
-				for (int charIdx = 0; charIdx < rowValue.Length; charIdx++)
-				{
+				for(int charIdx = 0; charIdx < rowValue.Length; charIdx++) {
 					char ch = rowValue[charIdx];
 					values[charIdx] = ch != '.' && ch != '|';
 				}
@@ -188,8 +195,7 @@ namespace Mesen.Windows
 
 		private void AddRow(bool[] values)
 		{
-			if(values.Length != m_GridCols - 2)
-			{ 
+			if(values.Length != m_GridCols - 2) {
 				throw new ArgumentException("Values array length must be equal to number of columns minus 2 (for frame and spacer)");
 			}
 
@@ -197,21 +203,15 @@ namespace Mesen.Windows
 			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
 			// Add new row of cells
-			for(int j = 0; j < m_GridCols; j++) 
-			{
+			for(int j = 0; j < m_GridCols; j++) {
 				string tag = "";
 
-				if(j == 0)
-				{ 
-					tag = ""; 
-				}
-				else if(j == 1)
-				{ 
+				if(j == 0) {
+					tag = "";
+				} else if(j == 1) {
 					tag = (m_GridRows).ToString().PadLeft(6, '0');
-				}
-				else
-				{ 
-					tag = m_Tags[j]; 
+				} else {
+					tag = m_Tags[j];
 				}
 
 				var header = new Border {
@@ -222,8 +222,7 @@ namespace Mesen.Windows
 					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 				};
 
-				if (j < 1)
-				{
+				if(j < 1) {
 					// Create an image display for the spacer column
 					var cell = new Image {
 						Tag = m_GridRows,
@@ -242,9 +241,7 @@ namespace Mesen.Windows
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
 					m_Grid.Children.Add(header);
-				} 
-				else if (j == 1)
-				{
+				} else if(j == 1) {
 					// Create a ToggleButton for other columns
 					var cell = new Button {
 						Classes = { "tas-cell" },
@@ -258,8 +255,7 @@ namespace Mesen.Windows
 
 					cell.Content = cell.Tag;
 
-					cell.Click += (s, e) =>
-					{
+					cell.Click += (s, e) => {
 						// String to int
 						int goalFrame = int.Parse((string)cell.Tag);
 						RecordApi.MovieJumpToFrame(goalFrame);
@@ -276,9 +272,7 @@ namespace Mesen.Windows
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
 					m_Grid.Children.Add(header);
-				}
-				else
-				{
+				} else {
 					// Create a ToggleButton for other columns
 					var cell = new ToggleButton {
 						Classes = { "tas-cell" },
@@ -326,47 +320,49 @@ namespace Mesen.Windows
 
 		private void UpdateCurrentFrame()
 		{
-			if(!RecordApi.MoviePlaying())
+			if(EmuApi.IsPaused())
+				return;
+
+			if(m_CurrentFrame >= m_RowMarkerImages.Count)
+				return;
+
+			if(m_CurrentFrame == m_PreviousFrame)
 				return;
 
 			m_PreviousFrame = m_CurrentFrame;
-			m_CurrentFrame = RecordApi.MovieGetFrameCount();
+			m_CurrentFrame = (int)RecordApi.MovieGetFrameCount();
 
 			UpdateFrameMarker();
 		}
 
 		private void UpdateFrameMarker()
 		{
-			if (m_CurrentFrame > m_RowMarkerImages.Count)
+			if(m_CurrentFrame >= m_RowMarkerImages.Count)
 				return;
 
-			if (m_CurrentFrame == m_PreviousFrame)
+			if(m_CurrentFrame == m_PreviousFrame)
 				return;
 
 			// Disable previous markers
 			int range = 40;
 			int lowerBound = Math.Max(0, m_CurrentFrame - range);
 			int upperBound = m_CurrentFrame - lowerBound - 1;
-			if (upperBound > 0)
-			{
-				foreach (Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound))
-				{
+			if(upperBound > 0) {
+				foreach(Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound)) {
 					child.IsVisible = false;
 				}
-			
 			}
+
 			var newChild = m_RowMarkerImages[m_CurrentFrame];
-			if(newChild != null)
-			{
+			if(newChild != null) {
 				newChild.IsVisible = true;
 			}
 
-			if (m_PreviousFrame > m_RowMarkerImages.Count)
+			if(m_PreviousFrame > m_RowMarkerImages.Count || m_PreviousFrame < 0)
 				return;
 
 			var oldChild = m_RowMarkerImages[m_PreviousFrame];
-			if(oldChild != null)
-			{
+			if(oldChild != null) {
 				oldChild.IsVisible = false;
 			}
 		}
@@ -391,30 +387,25 @@ namespace Mesen.Windows
 
 			List<bool[]> rows;
 
-			try
-			{
-				rows = await Task.Run(() =>
-				{
+			try {
+				rows = await Task.Run(() => {
 					var result = new List<bool[]>(m_Rows - m_MinRows);
 
-					for(int r = m_MinRows; r < m_Rows; r++)
-					{
+					for(int r = m_MinRows; r < m_Rows; r++) {
 						if(token.IsCancellationRequested)
 							return result;
 
 						bool[] values = new bool[m_GridCols - 2];
 						string rowValue = "";
 
-						for(int c = 0; c < m_Columns; c++)
-						{
+						for(int c = 0; c < m_Columns; c++) {
 							if(token.IsCancellationRequested)
 								return result;
 
 							rowValue += RecordApi.MovieGetInputCell(r, c);
 						}
 
-						for(int i = 0; i < rowValue.Length; i++)
-						{
+						for(int i = 0; i < rowValue.Length; i++) {
 							values[i] = rowValue[i] != '.' && rowValue[i] != '|';
 						}
 
@@ -423,19 +414,15 @@ namespace Mesen.Windows
 
 					return result;
 				}, token);
-			} 
-			catch(OperationCanceledException)
-			{
+			} catch(OperationCanceledException) {
 				return;
 			}
 
-			if(token.IsCancellationRequested)
-			{ 
+			if(token.IsCancellationRequested) {
 				return;
 			}
 
-			foreach(var values in rows)
-			{
+			foreach(var values in rows) {
 				if(token.IsCancellationRequested)
 					break;
 
@@ -447,6 +434,14 @@ namespace Mesen.Windows
 
 			if(!token.IsCancellationRequested)
 				RecordApi.MovieResume();
+		}
+
+		private void Forward_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+		{
+			m_PreviousFrame = m_CurrentFrame;
+			m_CurrentFrame = (int)RecordApi.MovieGetFrameCount();
+
+			UpdateFrameMarker();
 		}
 	}
 }

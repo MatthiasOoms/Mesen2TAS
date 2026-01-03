@@ -718,15 +718,24 @@ namespace Mesen.ViewModels
 						ActionType = ActionType.PlayTAS,
 						IsEnabled = () => IsGameRunning && !RecordApi.MovieRecording() && !RecordApi.MoviePlaying(),
 						OnClick = async () => {
-							string? filename = await FileDialogHelper.OpenFile(ConfigManager.MovieFolder, wnd, FileDialogHelper.MesenTASExt);
-							if(filename != null) {
+							// Open TASRecordWindow as a dialog
+							var recordWindow = new TASRecordWindow {
+								DataContext = new TASViewModel()
+							};
+							bool result = await recordWindow.ShowCenteredDialog<bool>((Control)wnd);
 
-								RecordApi.MoviePlay(filename);
+							// Only open TASWindow if dialog returned true
+							if(result)
+							{
+								var loadPath = TASViewModel.LoadPath;
+								RecordApi.MoviePlay(loadPath);
 
-								// Open the movie editor screen, give it the emulator
-								var window = ApplicationHelper.GetOrCreateUniqueWindow(wnd, () => new TASWindow());
+								var window = ApplicationHelper.GetOrCreateUniqueWindow(
+									wnd,
+									() => new TASWindow()
+								);
 
-								_ =  window.AddMissingRowsAsync();
+								_ = window.AddMissingRowsAsync();
 							}
 						}
 					},

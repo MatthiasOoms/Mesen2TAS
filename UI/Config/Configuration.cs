@@ -41,6 +41,7 @@ namespace Mesen.Config
 		[Reactive] public RecentItems RecentFiles { get; set; } = new();
 		[Reactive] public VideoRecordConfig VideoRecord { get; set; } = new();
 		[Reactive] public MovieRecordConfig MovieRecord { get; set; } = new();
+		[Reactive] public MovieRecordConfig TASRecord { get; set; } = new();
 		[Reactive] public HdPackBuilderConfig HdPackBuilder { get; set; } = new();
 		[Reactive] public CheatWindowConfig Cheats { get; set; } = new();
 		[Reactive] public NetplayConfig Netplay { get; set; } = new();
