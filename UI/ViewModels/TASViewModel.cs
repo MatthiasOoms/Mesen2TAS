@@ -30,6 +30,8 @@ namespace Mesen.ViewModels
 		public static string SavePath { get; set; } = Path.Join(ConfigManager.MovieFolder, EmuApi.GetRomInfo().GetRomName() + "_out." + FileDialogHelper.MesenTASExt);
 		[Reactive] public MovieRecordConfig Config { get; set; }
 
+		[Reactive] public bool FollowCursor { get; set; } = true;
+
 		public TASViewModel()
 		{
 			Config = ConfigManager.Config.TASRecord.Clone();

@@ -13,6 +13,9 @@ using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 using Mesen.ViewModels;
 using Avalonia.Rendering;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using System.ComponentModel;
 
 namespace Mesen.Windows
 {
@@ -35,6 +38,8 @@ namespace Mesen.Windows
 		private const int m_MinRows = 20;
 
 		private List<Image> m_RowMarkerImages = new();
+
+		private TASViewModel VM => DataContext as TASViewModel;
 
 		//(|,Reset,Power,|,U,D,L,R,Select,Start,B,A)
 		string[] m_Tags =
@@ -86,7 +91,8 @@ namespace Mesen.Windows
 		private void StartFrameLoop()
 		{
 			_frameTimer = new DispatcherTimer {
-				Interval = TimeSpan.FromMilliseconds(16) // ~60 Hz
+				// Get 60fps framerate
+				Interval = TimeSpan.FromMilliseconds(1/EmuApi.GetFps())
 			};
 
 			_frameTimer.Tick += (_, _) => UpdateCurrentFrame();
@@ -222,9 +228,11 @@ namespace Mesen.Windows
 					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 				};
 
-				if(j < 1) {
+				if(j < 1) 
+				{
 					// Create an image display for the spacer column
-					var cell = new Image {
+					var cell = new Image 
+					{
 						Tag = m_GridRows,
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -241,9 +249,12 @@ namespace Mesen.Windows
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
 					m_Grid.Children.Add(header);
-				} else if(j == 1) {
+				} 
+				else if(j == 1) 
+				{
 					// Create a ToggleButton for other columns
-					var cell = new Button {
+					var cell = new Button 
+					{
 						Classes = { "tas-cell" },
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -255,7 +266,8 @@ namespace Mesen.Windows
 
 					cell.Content = cell.Tag;
 
-					cell.Click += (s, e) => {
+					cell.Click += (s, e) => 
+					{
 						// String to int
 						int goalFrame = int.Parse((string)cell.Tag);
 						RecordApi.MovieJumpToFrame(goalFrame);
@@ -272,9 +284,12 @@ namespace Mesen.Windows
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
 					m_Grid.Children.Add(header);
-				} else {
+				} 
+				else 
+				{
 					// Create a ToggleButton for other columns
-					var cell = new ToggleButton {
+					var cell = new ToggleButton 
+					{
 						Classes = { "tas-cell" },
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -293,19 +308,24 @@ namespace Mesen.Windows
 					int rowIndex = m_GridRows;   // capture row
 					int colIndex = j;           // capture column
 
-					cell.IsCheckedChanged += (s, e) => {
+					cell.IsCheckedChanged += (s, e) => 
+					{
 						int inputHalfIdx = 0;
 						int fieldIdx = colIndex - 2;
 
-						if(colIndex > 3) {
+						if(colIndex > 3) 
+						{
 							inputHalfIdx = 1;
 							fieldIdx = colIndex - 4;
 						}
 
-						if(cell.IsChecked == true) {
+						if(cell.IsChecked == true) 
+						{
 							cell.Content = cell.Tag;
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, ((string)cell.Tag)[0]);
-						} else {
+						} 
+						else 
+						{
 							cell.Content = "";
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, '.');
 						}
@@ -326,11 +346,11 @@ namespace Mesen.Windows
 			if(m_CurrentFrame >= m_RowMarkerImages.Count)
 				return;
 
-			if(m_CurrentFrame == m_PreviousFrame)
-				return;
-
 			m_PreviousFrame = m_CurrentFrame;
 			m_CurrentFrame = (int)RecordApi.MovieGetFrameCount();
+
+			if(m_CurrentFrame == m_PreviousFrame)
+				return;
 
 			UpdateFrameMarker();
 		}
@@ -347,22 +367,45 @@ namespace Mesen.Windows
 			int range = 40;
 			int lowerBound = Math.Max(0, m_CurrentFrame - range);
 			int upperBound = m_CurrentFrame - lowerBound - 1;
-			if(upperBound > 0) {
-				foreach(Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound)) {
+			if(upperBound > 0) 
+			{
+				foreach(Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound)) 
+				{
 					child.IsVisible = false;
 				}
 			}
 
 			var newChild = m_RowMarkerImages[m_CurrentFrame];
-			if(newChild != null) {
+			if(newChild != null) 
+			{
 				newChild.IsVisible = true;
 			}
+
+			// Get Row that corresponds to the current frame
+			Control? rowControl = null;
+
+			foreach(var child in m_Grid.Children)
+			{
+				if(Grid.GetRow(child) == m_CurrentFrame)
+				{
+					rowControl = child;
+					break;
+				}
+			}
+
+			// Scroll to make sure the row is visible
+			if(rowControl != null && VM.FollowCursor == true)
+			{
+				rowControl.BringIntoView();
+			}
+
 
 			if(m_PreviousFrame > m_RowMarkerImages.Count || m_PreviousFrame < 0)
 				return;
 
 			var oldChild = m_RowMarkerImages[m_PreviousFrame];
-			if(oldChild != null) {
+			if(oldChild != null) 
+			{
 				oldChild.IsVisible = false;
 			}
 		}

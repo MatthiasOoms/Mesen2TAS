@@ -63,6 +63,11 @@ struct InteropRomInfo
 };
 
 extern "C" {
+	DllExport double __stdcall GetFps()
+	{
+		return _emu->GetFps();
+	}
+
 	DllExport bool __stdcall TestDll()
 	{
 		return true;

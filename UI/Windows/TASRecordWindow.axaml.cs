@@ -11,7 +11,6 @@ namespace Mesen.Windows
 {
 	public class TASRecordWindow : MesenWindow
 	{
-
 		public TASRecordWindow()
 		{
 			InitializeComponent();

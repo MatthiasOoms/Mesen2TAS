@@ -9,9 +9,9 @@
 	xmlns:v="using:Mesen.Views"
 	xmlns:l="using:Mesen.Localization"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
+	mc:Ignorable="d" d:DesignWidth="650" d:DesignHeight="400"
 	x:Class="Mesen.Windows.TASWindow"
-	Width="600" Height="400"
+	Width="650" Height="400"
 	Icon="/Assets/Movie.png"
 	x:DataType="vm:TASViewModel"
 	Title="{l:Translate wndTitle}"
@@ -19,6 +19,34 @@
 >
 
 	<Window.Styles>
+		<Style Selector="ToggleButton">
+			<Setter Property="Background" Value="White"/>
+			<Setter Property="BorderBrush" Value="Black"/>
+			<Setter Property="BorderThickness" Value="1"/>
+
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border
+					Background="{TemplateBinding Background}"
+					BorderBrush="{TemplateBinding BorderBrush}"
+					BorderThickness="{TemplateBinding BorderThickness}"
+					Width="{TemplateBinding Width}"
+					Height="{TemplateBinding Height}"
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Stretch">
+						<ContentPresenter
+							Content="{TemplateBinding Content}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"/>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+
+		<Style Selector="ToggleButton:checked">
+			<Setter Property="Background" Value="Gray"/>
+		</Style>
+
 		<Style Selector="ToggleButton.tas-cell">
 			<Setter Property="Background" Value="White"/>
 			<Setter Property="BorderBrush" Value="Black"/>
@@ -78,5 +106,20 @@
 			<TextBlock Text="{l:Translate btnRewind}"/>
 		</Button>
 
+		<StackPanel
+                HorizontalAlignment="Left"
+					 VerticalAlignment="Center"
+                Margin="8">
+
+        <TextBlock
+            Text="{l:Translate lblFollowCursor}"
+            HorizontalAlignment="Center"
+            Margin="0 0 0 4" />
+
+        <ToggleButton
+            IsChecked="{Binding FollowCursor}"
+            Height="28"
+            HorizontalAlignment="Stretch" />
+    </StackPanel>
 	</DockPanel>
 </Window>

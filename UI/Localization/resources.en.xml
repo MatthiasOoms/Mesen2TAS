@@ -1196,6 +1196,7 @@
 			<Control ID="wndTitle">TAS Controls</Control>
 			<Control ID="btnForward">Advance</Control>
 			<Control ID="btnRewind">Rewind</Control>
+			<Control ID="lblFollowCursor">Follow Cursor</Control>
 		</Form>
 
 		<Form ID="HistoryViewerWindow">
