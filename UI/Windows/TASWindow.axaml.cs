@@ -16,6 +16,8 @@ using Avalonia.Rendering;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
+using Avalonia.Input;
+using System.Linq;
 
 namespace Mesen.Windows
 {
@@ -23,7 +25,8 @@ namespace Mesen.Windows
 	{
 		private readonly CancellationTokenSource _cts = new();
 
-		private Grid m_Grid;
+		private Grid m_GameGrid;
+		private Grid m_MacroGrid;
 		private NativeRenderer _renderer;
 
 		private int m_Rows = 0;
@@ -38,6 +41,9 @@ namespace Mesen.Windows
 		private const int m_MinRows = 20;
 
 		private List<Image> m_RowMarkerImages = new();
+
+		private int m_MacroRows = 5;
+		private bool[][] m_MacroValues;
 
 		private TASViewModel VM => DataContext as TASViewModel;
 
@@ -92,7 +98,7 @@ namespace Mesen.Windows
 		{
 			_frameTimer = new DispatcherTimer {
 				// Get 60fps framerate
-				Interval = TimeSpan.FromMilliseconds(1/EmuApi.GetFps())
+				Interval = TimeSpan.FromMilliseconds(1 / EmuApi.GetFps())
 			};
 
 			_frameTimer.Tick += (_, _) => UpdateCurrentFrame();
@@ -102,8 +108,7 @@ namespace Mesen.Windows
 		protected override void OnClosed(EventArgs e)
 		{
 			HistoryApi.HistoryViewerInitialize(TryGetPlatformHandle()?.Handle ?? IntPtr.Zero, _renderer.Handle);
-			if (HistoryApi.HistoryViewerEnabled())
-			{
+			if(HistoryApi.HistoryViewerEnabled()) {
 				HistoryApi.HistoryViewerSaveMovie(TASViewModel.SavePath, 0, RecordApi.MovieGetFrameCount());
 			}
 			HistoryApi.HistoryViewerRelease();
@@ -123,17 +128,29 @@ namespace Mesen.Windows
 
 		private void InitializeGrid()
 		{
-			m_Grid = this.FindControl<Grid>("GameGrid");
-			if(m_Grid == null) {
+			m_MacroValues = new bool[m_MacroRows][];
+			for(int r = 0; r < m_MacroRows; r++)
+			{
+				m_MacroValues[r] = new bool[m_GridCols - 2];
+			}
+
+			m_GameGrid = this.FindControl<Grid>("GameGrid");
+			if(m_GameGrid == null) {
 				return;
 			}
 
-			m_Grid.RowDefinitions.Clear();
-			m_Grid.ColumnDefinitions.Clear();
-			m_Grid.Children.Clear();
+			m_MacroGrid = this.FindControl<Grid>("MacroGrid");
+			if(m_MacroGrid == null) {
+				return;
+			}
 
-			// Define header row
-			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
+			m_GameGrid.RowDefinitions.Clear();
+			m_GameGrid.ColumnDefinitions.Clear();
+			m_GameGrid.Children.Clear();
+
+			// Define header rows
+			m_MacroGrid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
+			m_GameGrid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
 			// Add header TextBlocks
 			for(int j = 0; j < m_GridCols; j++) {
@@ -152,11 +169,104 @@ namespace Mesen.Windows
 					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 				};
 
-				m_Grid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(m_Widths[j])));
-
 				Grid.SetRow(header, 0);
 				Grid.SetColumn(header, j);
-				m_Grid.Children.Add(header);
+
+				m_GameGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(m_Widths[j])));
+
+				m_GameGrid.Children.Add(header);
+
+				if(j < 2) {
+					continue;
+				}
+
+				string text = m_Tags[j][0].ToString();
+
+				var macroHeaderText = new TextBlock {
+					Classes = { "tas-header" },
+					Text = text,
+					TextAlignment = Avalonia.Media.TextAlignment.Center
+				};
+
+				var macroHeader = new Border {
+					BorderBrush = Brushes.Black,
+					BorderThickness = new Thickness(1),
+					Padding = new Thickness(0),
+					Child = macroHeaderText,
+					HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+				};
+
+				Grid.SetRow(macroHeader, 0);
+				Grid.SetColumn(macroHeader, j - 2);
+
+				m_MacroGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(m_Widths[0])));
+
+				m_MacroGrid.Children.Add(macroHeader);
+			}
+
+			// Add 5 rows to the Macro Grid
+			for(int r = 0; r < m_MacroRows; r++)
+			{
+				m_MacroGrid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
+
+				for(int c = 0; c < m_GridCols - 2; c++)
+				{
+					var cell = new ToggleButton
+					{
+						Classes = { "tas-cell" },
+						Width = m_Widths[0],
+						Height = m_Height,
+						Tag = m_Tags[c + 2],
+						Content = "",
+						HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+						VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+					};
+
+					var header = new Border
+					{
+						BorderBrush = Brushes.Black,
+						BorderThickness = new Thickness(1),
+						Padding = new Thickness(0),
+						Child = cell,
+						HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+						VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+					};
+
+					cell.Content = "";
+					cell.IsChecked = false;
+
+					int rowIndex = r;
+
+					int fieldIdx = c;
+					int colIdx = c;
+
+					cell.IsCheckedChanged += (s, e) => 
+					{
+						if(c > 1)
+						{
+							fieldIdx = c - 2;
+						}
+
+						if(cell.IsChecked == true)
+						{
+							var content = ((string)cell.Tag)[0];
+
+							cell.Content = content;
+						}
+						else
+						{
+							cell.Content = "";
+						}
+
+						m_MacroValues[rowIndex][colIdx] = cell.IsChecked == true;
+					};
+
+					Grid.SetRow(header, r + 1);
+					Grid.SetColumn(header, c);
+
+					m_MacroGrid.Children.Add(header);
+				}
 			}
 
 			if(EmuApi.IsPaused()) {
@@ -195,6 +305,7 @@ namespace Mesen.Windows
 					char ch = rowValue[charIdx];
 					values[charIdx] = ch != '.' && ch != '|';
 				}
+
 				AddRow(values);
 			}
 		}
@@ -206,7 +317,7 @@ namespace Mesen.Windows
 			}
 
 			m_GridRows++;
-			m_Grid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
+			m_GameGrid.RowDefinitions.Add(new RowDefinition(new GridLength(m_Height)));
 
 			// Add new row of cells
 			for(int j = 0; j < m_GridCols; j++) {
@@ -228,11 +339,9 @@ namespace Mesen.Windows
 					VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
 				};
 
-				if(j < 1) 
-				{
+				if(j < 1) {
 					// Create an image display for the spacer column
-					var cell = new Image 
-					{
+					var cell = new Image {
 						Tag = m_GridRows,
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -248,13 +357,9 @@ namespace Mesen.Windows
 
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
-					m_Grid.Children.Add(header);
-				} 
-				else if(j == 1) 
-				{
-					// Create a ToggleButton for other columns
-					var cell = new Button 
-					{
+					m_GameGrid.Children.Add(header);
+				} else if(j == 1) {
+					var cell = new Button {
 						Classes = { "tas-cell" },
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -266,8 +371,7 @@ namespace Mesen.Windows
 
 					cell.Content = cell.Tag;
 
-					cell.Click += (s, e) => 
-					{
+					cell.Click += (s, e) => {
 						// String to int
 						int goalFrame = int.Parse((string)cell.Tag);
 						RecordApi.MovieJumpToFrame(goalFrame);
@@ -283,13 +387,10 @@ namespace Mesen.Windows
 
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
-					m_Grid.Children.Add(header);
-				} 
-				else 
-				{
+					m_GameGrid.Children.Add(header);
+				} else {
 					// Create a ToggleButton for other columns
-					var cell = new ToggleButton 
-					{
+					var cell = new ToggleButton {
 						Classes = { "tas-cell" },
 						Width = m_Widths[j],
 						Height = m_Height,
@@ -308,24 +409,19 @@ namespace Mesen.Windows
 					int rowIndex = m_GridRows;   // capture row
 					int colIndex = j;           // capture column
 
-					cell.IsCheckedChanged += (s, e) => 
-					{
+					cell.IsCheckedChanged += (s, e) => {
 						int inputHalfIdx = 0;
 						int fieldIdx = colIndex - 2;
 
-						if(colIndex > 3) 
-						{
+						if(colIndex > 3) {
 							inputHalfIdx = 1;
 							fieldIdx = colIndex - 4;
 						}
 
-						if(cell.IsChecked == true) 
-						{
+						if(cell.IsChecked == true) {
 							cell.Content = cell.Tag;
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, ((string)cell.Tag)[0]);
-						} 
-						else 
-						{
+						} else {
 							cell.Content = "";
 							RecordApi.MovieSetInputCell(rowIndex, inputHalfIdx, fieldIdx, '.');
 						}
@@ -333,7 +429,7 @@ namespace Mesen.Windows
 
 					Grid.SetRow(header, m_GridRows);
 					Grid.SetColumn(header, j);
-					m_Grid.Children.Add(header);
+					m_GameGrid.Children.Add(header);
 				}
 			}
 		}
@@ -357,55 +453,57 @@ namespace Mesen.Windows
 
 		private void UpdateFrameMarker()
 		{
-			if(m_CurrentFrame >= m_RowMarkerImages.Count)
+			if(m_CurrentFrame >= m_RowMarkerImages.Count) {
 				return;
+			}
 
-			if(m_CurrentFrame == m_PreviousFrame)
+			if(m_CurrentFrame == m_PreviousFrame) {
 				return;
+			}
 
 			// Disable previous markers
 			int range = 40;
 			int lowerBound = Math.Max(0, m_CurrentFrame - range);
 			int upperBound = m_CurrentFrame - lowerBound - 1;
-			if(upperBound > 0) 
-			{
-				foreach(Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound)) 
-				{
+			if(upperBound > 0) {
+				foreach(Image child in m_RowMarkerImages.GetRange(lowerBound, upperBound)) {
 					child.IsVisible = false;
 				}
 			}
 
 			var newChild = m_RowMarkerImages[m_CurrentFrame];
-			if(newChild != null) 
-			{
+			if(newChild != null) {
 				newChild.IsVisible = true;
 			}
 
 			// Get Row that corresponds to the current frame
 			Control? rowControl = null;
+			int targetFrame = m_CurrentFrame;
+			int padding = 5;
 
-			foreach(var child in m_Grid.Children)
-			{
-				if(Grid.GetRow(child) == m_CurrentFrame)
-				{
+			if(m_CurrentFrame + padding < m_RowMarkerImages.Count) {
+				targetFrame -= padding;
+			}
+
+			foreach(var child in m_GameGrid.Children) {
+				if(Grid.GetRow(child) == targetFrame) {
 					rowControl = child;
 					break;
 				}
 			}
 
 			// Scroll to make sure the row is visible
-			if(rowControl != null && VM.FollowCursor == true)
-			{
+			if(rowControl != null && VM.FollowCursor == true) {
 				rowControl.BringIntoView();
 			}
 
 
-			if(m_PreviousFrame > m_RowMarkerImages.Count || m_PreviousFrame < 0)
+			if(m_PreviousFrame > m_RowMarkerImages.Count || m_PreviousFrame < 0) {
 				return;
+			}
 
 			var oldChild = m_RowMarkerImages[m_PreviousFrame];
-			if(oldChild != null) 
-			{
+			if(oldChild != null) {
 				oldChild.IsVisible = false;
 			}
 		}
@@ -430,20 +528,26 @@ namespace Mesen.Windows
 
 			List<bool[]> rows;
 
+			while(m_Rows <= m_MinRows) {
+				await Task.Delay(50);
+			}
+
 			try {
 				rows = await Task.Run(() => {
 					var result = new List<bool[]>(m_Rows - m_MinRows);
 
 					for(int r = m_MinRows; r < m_Rows; r++) {
-						if(token.IsCancellationRequested)
+						if(token.IsCancellationRequested) {
 							return result;
+						}
 
 						bool[] values = new bool[m_GridCols - 2];
 						string rowValue = "";
 
 						for(int c = 0; c < m_Columns; c++) {
-							if(token.IsCancellationRequested)
+							if(token.IsCancellationRequested) {
 								return result;
+							}
 
 							rowValue += RecordApi.MovieGetInputCell(r, c);
 						}
@@ -466,8 +570,9 @@ namespace Mesen.Windows
 			}
 
 			foreach(var values in rows) {
-				if(token.IsCancellationRequested)
+				if(token.IsCancellationRequested) {
 					break;
+				}
 
 				await Dispatcher.UIThread.InvokeAsync(() => AddRow(values), DispatcherPriority.Background, token);
 
@@ -475,8 +580,9 @@ namespace Mesen.Windows
 				await Task.Yield();
 			}
 
-			if(!token.IsCancellationRequested)
+			if(!token.IsCancellationRequested) {
 				RecordApi.MovieResume();
+			}
 		}
 
 		private void Forward_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -485,6 +591,91 @@ namespace Mesen.Windows
 			m_CurrentFrame = (int)RecordApi.MovieGetFrameCount();
 
 			UpdateFrameMarker();
+		}
+
+		private void Paste_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+		{
+			// Get Frame MesenNumericTextbox
+			var frameTextBox = this.FindControl<Controls.MesenNumericTextBox>("Frame");
+
+			if(frameTextBox == null)
+			{
+				return;
+			}
+
+			if (frameTextBox.Text == null)
+			{
+				return;
+			}
+
+			if(frameTextBox.Text.Length < 1)
+			{
+				return;
+			}
+
+			// Read numeric value safely
+			if(!int.TryParse(frameTextBox.Text, out int targetFrame))
+			{
+				return;
+			}
+
+			// Clamp to valid grid range
+			int maxFrame = m_GridRows - m_MacroRows;
+			targetFrame = Math.Clamp(targetFrame, 0, maxFrame);
+
+			InsertInputs(targetFrame, m_MacroValues);
+		}
+
+		private void InsertInputs(int index, bool[][] values)
+		{
+			if(values.Length != m_MacroRows)
+			{
+				throw new ArgumentException("Values array length must be equal to number of macro rows");
+			}
+
+			for(int idx = 0; idx < values.Length; idx++)
+			{
+				if(values[idx].Length != m_GridCols - 2)
+				{
+					throw new ArgumentException("Values array length must be equal to number of columns minus 2 (for frame and spacer)");
+				}
+
+				int targetRow = index + idx;
+				int fieldIdx = 0;
+
+				for(int colIdx = 0; colIdx < m_GridCols - 2; colIdx++)
+				{
+					fieldIdx = colIdx;
+					
+					if(colIdx > 1)
+					{
+						fieldIdx -= 2;
+					}
+					
+					var border = m_GameGrid.Children.FirstOrDefault(c => Grid.GetRow(c) == targetRow && Grid.GetColumn(c) == colIdx + 2) as Border;
+					
+					if(border == null)
+					{
+						continue;
+					}
+
+					var cell = border.Child as ToggleButton;
+
+					if(cell == null)
+					{
+						continue;
+					}
+
+					if(values[idx][colIdx])
+					{
+						cell.IsChecked = true;
+					}
+					else
+					{
+						cell.IsChecked = false;
+					}
+				}
+			}
 		}
 	}
 }

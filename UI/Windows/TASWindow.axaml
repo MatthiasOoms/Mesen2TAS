@@ -6,6 +6,7 @@
 	xmlns:w="using:Mesen.Windows"
 	xmlns:vm="using:Mesen.ViewModels"
 	xmlns:c="using:Mesen.Debugger.Controls"
+	xmlns:controls="using:Mesen.Controls"
 	xmlns:v="using:Mesen.Views"
 	xmlns:l="using:Mesen.Localization"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -90,36 +91,60 @@
 		<vm:TASViewModel/>
 	</Window.DataContext>
 
-	<DockPanel>
-		<m:NativeRenderer Name="Renderer" HorizontalAlignment="Center" VerticalAlignment="Center">
-		</m:NativeRenderer>
-		<ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-			<Grid Name="GameGrid">
-			</Grid>
-		</ScrollViewer>
+	<Grid ColumnDefinitions="*,Auto">
 
-		<Button Command="{Binding ForwardCommand}" Click="Forward_Click">
-			<TextBlock Text="{l:Translate btnForward}"/>
-		</Button>
+		<!-- LEFT SIDE -->
+		<Grid Grid.Column="0" RowDefinitions="Auto,*">
+			<m:NativeRenderer
+				Name="Renderer"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center" />
 
-		<Button Command="{Binding RewindCommand}">
-			<TextBlock Text="{l:Translate btnRewind}"/>
-		</Button>
+			<ScrollViewer
+				Grid.Row="1"
+				HorizontalScrollBarVisibility="Auto"
+				VerticalScrollBarVisibility="Auto">
+				
+				<Grid Name="GameGrid"/>
+			</ScrollViewer>
+		</Grid>
 
+		<!-- RIGHT SIDE -->
 		<StackPanel
-                HorizontalAlignment="Left"
-					 VerticalAlignment="Center"
-                Margin="8">
+			Grid.Column="1"
+			Margin="8"
+			VerticalAlignment="Center"
+			Spacing="8">
 
-        <TextBlock
-            Text="{l:Translate lblFollowCursor}"
-            HorizontalAlignment="Center"
-            Margin="0 0 0 4" />
+			<Grid Name="MacroGrid">
+			</Grid>
 
-        <ToggleButton
-            IsChecked="{Binding FollowCursor}"
-            Height="28"
-            HorizontalAlignment="Stretch" />
-    </StackPanel>
-	</DockPanel>
+			<Label HorizontalAlignment="Center">Paste at frame:</Label>
+			<controls:MesenNumericTextBox Name="Frame">
+			</controls:MesenNumericTextBox>
+			<Button  HorizontalAlignment="Stretch" Click="Paste_Click">
+				Paste
+			</Button>
+
+			<Button HorizontalAlignment="Stretch" Command="{Binding ForwardCommand}"
+				Click="Forward_Click">
+				<TextBlock Text="{l:Translate btnForward}"/>
+			</Button>
+
+			<Button  HorizontalAlignment="Stretch" Command="{Binding RewindCommand}">
+				<TextBlock Text="{l:Translate btnRewind}"/>
+			</Button>
+
+			<TextBlock
+				Text="{l:Translate lblFollowCursor}"
+				HorizontalAlignment="Center"
+				Margin="0 8 0 4"/>
+
+			<ToggleButton
+				IsChecked="{Binding FollowCursor}"
+				Height="28"
+				HorizontalAlignment="Stretch"/>
+		</StackPanel>
+	</Grid>
+
 </Window>
