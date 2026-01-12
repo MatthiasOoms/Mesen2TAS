@@ -12,11 +12,6 @@ using System.Threading;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 using Mesen.ViewModels;
-using Avalonia.Rendering;
-using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
-using System.ComponentModel;
-using Avalonia.Input;
 using System.Linq;
 
 namespace Mesen.Windows
@@ -479,10 +474,10 @@ namespace Mesen.Windows
 			// Get Row that corresponds to the current frame
 			Control? rowControl = null;
 			int targetFrame = m_CurrentFrame;
-			int padding = 5;
+			int padding = 2;
 
 			if(m_CurrentFrame + padding < m_RowMarkerImages.Count) {
-				targetFrame -= padding;
+				targetFrame += padding;
 			}
 
 			foreach(var child in m_GameGrid.Children) {
