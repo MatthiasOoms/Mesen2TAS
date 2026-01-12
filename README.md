@@ -2,6 +2,10 @@
 
 Mesen is a multi-system emulator (NES, SNES, Game Boy, Game Boy Advance, PC Engine, SMS/Game Gear, WonderSwan) for Windows, Linux and macOS.  
 
+## Unique To This Fork
+This fork features Tools for Tool Assisted Speedrunning. You can access them under Tools -> Movies -> Play TAS.
+To begin you will have to record a normal movie (.mmo file) and rename it to .tas instead.
+
 ## Releases
 
 The latest stable version is available from the [releases on GitHub](https://github.com/SourMesen/Mesen2/releases).  
