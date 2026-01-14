@@ -478,7 +478,14 @@ void RewindManager::RewindFrames(uint32_t frames)
 			// Reload the savestate for this block
 			_currentHistory.LoadState(_emu, _history);
 
-			_history.pop_back();
+			if(!_history.empty())
+			{
+				_history.pop_back();
+			}
+			else
+			{
+				_currentHistory = RewindData();
+			}
 
 			// Move forward to the target frame
 			_emu->RequestInvisibleFrames(replayFrames);

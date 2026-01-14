@@ -431,9 +431,6 @@ namespace Mesen.Windows
 
 		private void UpdateCurrentFrame()
 		{
-			if(EmuApi.IsPaused())
-				return;
-
 			if(m_CurrentFrame >= m_RowMarkerImages.Count)
 				return;
 
