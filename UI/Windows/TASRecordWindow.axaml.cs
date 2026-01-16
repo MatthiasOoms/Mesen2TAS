@@ -26,7 +26,8 @@ namespace Mesen.Windows
 
 		private async void OnBrowseClick1(object sender, RoutedEventArgs e)
 		{
-			string? filename = await FileDialogHelper.OpenFile(ConfigManager.MovieFolder, VisualRoot, FileDialogHelper.MesenTASExt);
+			string[] extensions = { FileDialogHelper.MesenTASExt, FileDialogHelper.MesenMovieExt };
+			string? filename = await FileDialogHelper.OpenFile(ConfigManager.MovieFolder, VisualRoot, extensions);
 			if(filename != null)
 			{
 				TASViewModel.LoadPath = filename;
