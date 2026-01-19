@@ -102,6 +102,7 @@ private:
 	atomic<int> _blockDebuggerRequestCount;
 
 	atomic<bool> _isRunAheadFrame;
+	bool _isRunInvisibleFrame = false;
 	bool _frameRunning = false;
 
 	RomInfo _rom;
@@ -237,6 +238,7 @@ public:
 
 	bool IsRunning() { return _console != nullptr; }
 	bool IsRunAheadFrame() { return _isRunAheadFrame; }
+	bool IsRunInvisibleFrame() { return _isRunInvisibleFrame; }
 
 	TimingInfo GetTimingInfo(CpuType cpuType);
 	uint32_t GetFrameCount();

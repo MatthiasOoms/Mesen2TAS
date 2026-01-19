@@ -137,7 +137,7 @@ void Emulator::Run()
 		uint32_t frames = _pendingInvisibleFrames.exchange(0);
 		if(frames > 0)
 		{
-			_isRunAheadFrame = true;
+			_isRunInvisibleFrame = true;
 
 			while(frames--)
 			{
@@ -146,7 +146,7 @@ void Emulator::Run()
 			}
 
 			frames = 0;
-			_isRunAheadFrame = false;
+			_isRunInvisibleFrame = false;
 			_pauseOnNextFrame = true;
 		}
 
@@ -857,7 +857,7 @@ void Emulator::WaitForPauseEnd()
 		uint32_t frames = _pendingInvisibleFrames.exchange(0);
 		if(frames > 0)
 		{
-			_isRunAheadFrame = true;
+			_isRunInvisibleFrame = true;
 
 			while(frames--)
 			{
@@ -866,7 +866,7 @@ void Emulator::WaitForPauseEnd()
 			}
 
 			frames = 0;
-			_isRunAheadFrame = false;
+			_isRunInvisibleFrame = false;
 			_pauseOnNextFrame = true;
 		}
 

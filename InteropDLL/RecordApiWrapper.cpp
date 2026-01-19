@@ -68,7 +68,8 @@ extern "C"
 
 		auto& input = movieManager->GetCurrentMovieInput();
 
-		if(row < 0 || row >= (int)input.size() || col < 0 || col >= (int)input[row].size()) {
+		if(row < 0 || row >= (int)input.size() || col < 0 || col >= (int)input[row].size())
+		{
 			return "";
 		}
 
@@ -133,7 +134,7 @@ extern "C"
 	DllExport void __stdcall MovieResume() { _emu->Resume(); }
 
 	DllExport void __stdcall MovieStop() { _emu->GetMovieManager()->Stop(); }
-	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing() && !_emu->IsRunAheadFrame(); }
+	DllExport bool __stdcall MoviePlaying() { return _emu->GetMovieManager()->Playing() && !_emu->IsRunInvisibleFrame(); }
 	DllExport bool __stdcall MovieRecording() { return _emu->GetMovieManager()->Recording(); }
 	DllExport void __stdcall MovieRecord(RecordMovieOptions options) { _emu->GetMovieManager()->Record(options); }
 }
